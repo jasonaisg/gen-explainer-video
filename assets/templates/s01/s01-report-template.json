@@ -1,0 +1,31 @@
+{
+  "schema_version": "2.0",
+  "stage": "S01",
+  "inputs": {
+    "video": "",
+    "reference_script": ""
+  },
+  "audio_extraction_report": "audio/extraction-report.json",
+  "asr_engine": {
+    "name": "",
+    "version": "",
+    "model": ""
+  },
+  "counts": {
+    "raw_units": 0,
+    "raw_units_by_kind": {},
+    "raw_units_by_timing_method": {},
+    "keep_mappings": 0,
+    "replace_mappings": 0,
+    "final_units": 0,
+    "final_units_by_kind": {},
+    "discarded_inferred_punctuation": 0,
+    "reference_only_codepoints_ignored": 0,
+    "asr_only_codepoints_preserved": 0
+  },
+  "pending_items": [],
+  "validation": {
+    "status": "NOT_RUN",
+    "command": ""
+  }
+}

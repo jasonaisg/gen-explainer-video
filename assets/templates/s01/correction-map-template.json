@@ -1,0 +1,17 @@
+{
+  "schema_version": "2.0",
+  "stage": "S01",
+  "allowed_operations": ["KEEP", "REPLACE"],
+  "mappings": [
+    {
+      "mapping_id": "map-000001",
+      "operation": "KEEP",
+      "source_unit_ids": ["raw-unit-000001"],
+      "source_text": "20%",
+      "result_text": "20%",
+      "reason": "ASR_PRESERVED",
+      "decision_status": "RESOLVED"
+    }
+  ],
+  "pending_items": []
+}

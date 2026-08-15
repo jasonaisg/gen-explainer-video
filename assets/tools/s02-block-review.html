@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>S02 语义分块审批</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --ink: #14213d;
+      --muted: #65718a;
+      --line: #dce2ec;
+      --soft-line: #edf0f5;
+      --primary: #1457e6;
+      --primary-strong: #0f46bc;
+      --primary-soft: #edf3ff;
+      --teal: #039c92;
+      --amber: #bf7800;
+      --danger: #c0342b;
+      --success: #07855c;
+      --shadow: 0 18px 50px rgba(19, 35, 71, 0.16);
+      font-family: Inter, "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--ink); background: var(--bg); font-size: 14px; }
+    button, input, textarea { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible {
+      outline: 3px solid rgba(20, 87, 230, 0.22);
+      outline-offset: 2px;
+    }
+    .app { min-height: 100vh; }
+    .topbar {
+      position: sticky; top: 0; z-index: 20; height: 68px;
+      display: grid; grid-template-columns: minmax(270px, 1fr) auto minmax(270px, 1fr);
+      align-items: center; gap: 24px; padding: 0 22px;
+      background: rgba(255,255,255,.96); border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(16px);
+    }
+    .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .brand-mark { width: 5px; height: 30px; background: var(--primary); border-radius: 3px; }
+    .brand h1 { margin: 0; font-size: 19px; letter-spacing: .01em; white-space: nowrap; }
+    .project { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .progress-wrap { width: min(330px, 30vw); text-align: center; }
+    .progress-label { margin-bottom: 7px; color: #394761; font-weight: 650; font-variant-numeric: tabular-nums; }
+    .progress-track { height: 4px; background: #e8ecf2; border-radius: 3px; overflow: hidden; }
+    .progress-bar { height: 100%; width: 0; background: var(--primary); transition: width .2s ease; }
+    .toolbar { justify-self: end; display: flex; gap: 8px; }
+    .btn {
+      min-height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      border: 1px solid #cfd7e4; background: #fff; border-radius: 6px; padding: 8px 13px;
+      cursor: pointer; font-weight: 600; transition: border-color .16s, background .16s, color .16s;
+    }
+    .btn:hover:not(:disabled) { border-color: #93a1b8; background: #f8faff; }
+    .btn:disabled { opacity: .42; cursor: not-allowed; }
+    .btn-primary { border-color: var(--primary); background: var(--primary); color: #fff; padding-inline: 18px; }
+    .btn-primary:hover:not(:disabled) { border-color: var(--primary-strong); background: var(--primary-strong); }
+    .btn-quiet { border-color: transparent; background: transparent; color: var(--muted); }
+    .icon { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .layout { display: grid; grid-template-columns: 320px minmax(0, 1fr); min-height: calc(100vh - 108px); }
+    .sidebar {
+      position: sticky; top: 68px; height: calc(100vh - 108px); overflow: hidden;
+      background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column;
+    }
+    .search { padding: 14px; border-bottom: 1px solid var(--soft-line); }
+    .search-box { position: relative; }
+    .search-box .icon { position: absolute; left: 11px; top: 10px; color: var(--muted); }
+    .search input { width: 100%; height: 38px; border: 1px solid #cfd7e4; border-radius: 6px; padding: 7px 10px 7px 37px; color: var(--ink); background: #fff; }
+    .block-nav { overflow: auto; flex: 1; }
+    .nav-item {
+      width: 100%; display: grid; grid-template-columns: 32px minmax(0,1fr) auto; gap: 8px;
+      align-items: center; border: 0; border-bottom: 1px solid var(--soft-line); border-left: 4px solid transparent;
+      background: #fff; padding: 13px 12px 13px 9px; text-align: left; cursor: pointer;
+    }
+    .nav-item:hover { background: #f9fbff; }
+    .nav-item.active { border-left-color: var(--primary); background: var(--primary-soft); }
+    .nav-num { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .nav-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    .nav-meta { display: grid; justify-items: end; gap: 3px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .nav-status { display: inline-flex; align-items: center; gap: 4px; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; border: 1px solid #8c98aa; }
+    .status-dot.done { border-color: var(--success); background: var(--success); }
+    .sidebar-tip { padding: 13px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .workspace { min-width: 0; padding: 22px clamp(18px, 3vw, 46px) 48px; }
+    .workspace-head { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin: 2px auto 18px; max-width: 1180px; }
+    .workspace-head h2 { margin: 0 0 5px; font-size: 17px; }
+    .workspace-head p { margin: 0; color: var(--muted); line-height: 1.5; }
+    .legend { display: flex; gap: 14px; color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .legend span::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: #a9b2c0; }
+    .legend .is-done::before { background: var(--success); }
+    .document { max-width: 1180px; margin: 0 auto; }
+    .block {
+      position: relative; background: var(--panel); border: 1px solid var(--line); border-left: 5px solid var(--accent, var(--teal));
+      padding: 19px 20px 22px; scroll-margin-top: 88px;
+    }
+    .block + .boundary + .block { margin-top: 0; }
+    .block.confirmed { border-left-color: var(--success); }
+    .block-head { display: flex; align-items: start; justify-content: space-between; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--soft-line); }
+    .block-idline { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; min-width: 0; }
+    .block-code { color: var(--accent, var(--teal)); font-weight: 800; font-size: 16px; }
+    .block.confirmed .block-code { color: var(--success); }
+    .block-title-view { font-size: 17px; font-weight: 750; }
+    .block-time { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .block-actions { display: flex; flex-wrap: wrap; justify-content: end; gap: 7px; }
+    .block-actions .btn { min-height: 34px; padding: 6px 10px; font-size: 13px; }
+    .confirm-btn.is-confirmed { border-color: #b9dfd0; color: var(--success); background: #f0faf6; }
+    .fields { display: grid; grid-template-columns: .85fr 1.15fr 1.25fr; gap: 12px; margin-top: 15px; }
+    .field { display: grid; gap: 6px; }
+    .field label { color: #45516a; font-size: 12px; font-weight: 700; }
+    .field input, .field textarea, .note-field textarea {
+      width: 100%; border: 1px solid #cfd7e4; border-radius: 5px; background: #fff; color: var(--ink);
+      padding: 9px 10px; resize: vertical; line-height: 1.45;
+    }
+    .field input { height: 39px; }
+    .field textarea { min-height: 61px; }
+    .field input.invalid, .field textarea.invalid { border-color: #df8d87; background: #fff8f7; }
+    .transcript { margin: 17px 0 0; font-size: 16px; line-height: 1.85; letter-spacing: .01em; color: #27344d; white-space: pre-wrap; }
+    .verbatim-details { margin-top: 12px; color: var(--muted); font-size: 12px; }
+    .verbatim-details summary { cursor: pointer; }
+    .verbatim-details p { margin: 8px 0 0; padding: 10px 12px; background: #f8f9fc; line-height: 1.7; color: #58647a; }
+    .boundary { position: relative; height: 44px; display: flex; align-items: center; justify-content: center; }
+    .boundary::before { content: ""; position: absolute; left: 0; right: 0; border-top: 1px dashed #7fa5f3; }
+    .boundary-btn { position: relative; z-index: 1; min-height: 30px; border-color: #7fa5f3; color: var(--primary); background: #fff; box-shadow: 0 4px 14px rgba(20,87,230,.1); }
+    .approval-panel { max-width: 1180px; margin: 22px auto 0; background: #fff; border: 1px solid var(--line); padding: 18px 20px; }
+    .approval-panel h3 { margin: 0 0 5px; font-size: 15px; }
+    .approval-panel p { margin: 0 0 12px; color: var(--muted); }
+    .note-field textarea { min-height: 72px; }
+    .footer {
+      position: fixed; z-index: 18; left: 0; right: 0; bottom: 0; height: 40px;
+      display: flex; align-items: center; justify-content: space-between; gap: 20px;
+      padding: 0 20px; background: rgba(255,255,255,.97); border-top: 1px solid var(--line); color: var(--muted); font-size: 12px;
+    }
+    .output-path { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .save-state { white-space: nowrap; }
+    .modal-shell { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 22px; background: rgba(10,22,45,.42); }
+    .modal-shell[hidden] { display: none; }
+    .modal { width: min(760px, 100%); background: #fff; border: 1px solid #cfd7e4; box-shadow: var(--shadow); border-radius: 8px; }
+    .modal-head { display: flex; justify-content: space-between; gap: 16px; padding: 19px 22px 12px; }
+    .modal-head h3 { margin: 0 0 5px; font-size: 18px; }
+    .modal-head p { margin: 0; color: var(--muted); }
+    .close-btn { width: 34px; height: 34px; padding: 0; }
+    .modal-body { padding: 12px 22px 20px; }
+    .range-meta { display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--muted); font-size: 12px; }
+    .range-row { display: grid; grid-template-columns: 1fr 140px; gap: 16px; align-items: center; }
+    input[type="range"] { accent-color: var(--primary); width: 100%; cursor: ew-resize; touch-action: none; }
+    .range-current { margin: 9px 0 0; color: var(--primary); font-size: 12px; font-weight: 700; }
+    .unit-select { height: 38px; width: 100%; border: 1px solid #cfd7e4; border-radius: 5px; padding: 0 9px; }
+    .previews { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+    .preview { border: 1px solid var(--line); background: #f8f9fc; padding: 12px; min-height: 125px; }
+    .preview strong { display: block; margin-bottom: 7px; }
+    .preview p { margin: 0; color: #394761; line-height: 1.7; }
+    .preview small { display: block; margin-top: 9px; color: var(--muted); }
+    .modal-actions { display: flex; justify-content: end; gap: 8px; padding: 14px 22px; border-top: 1px solid var(--line); }
+    .toast {
+      position: fixed; z-index: 80; right: 22px; bottom: 58px; max-width: min(460px, calc(100vw - 44px));
+      background: #17233c; color: #fff; padding: 11px 14px; border-radius: 6px; box-shadow: var(--shadow); line-height: 1.5;
+    }
+    .toast.error { background: #8d2924; }
+    .toast.success { background: #087152; }
+    .loading { min-height: calc(100vh - 68px); display: grid; place-items: center; color: var(--muted); }
+    .fatal { max-width: 620px; background: #fff; border: 1px solid #e4b2ad; padding: 22px; color: var(--danger); line-height: 1.7; }
+    .project-picker { width: min(620px, calc(100vw - 36px)); background: #fff; border: 1px solid var(--line); padding: 30px; box-shadow: var(--shadow); color: var(--ink); }
+    .project-picker h1 { margin: 0 0 10px; font-size: 24px; }
+    .project-picker p { margin: 0 0 18px; color: var(--muted); line-height: 1.75; }
+    .project-picker code { color: #34425d; background: #f4f6fa; padding: 2px 5px; }
+    .project-picker .btn { margin-top: 4px; }
+    .project-error { margin-top: 16px; color: var(--danger); line-height: 1.6; }
+    @media (max-width: 1000px) {
+      .topbar { grid-template-columns: 1fr auto; height: auto; min-height: 68px; padding-block: 10px; }
+      .progress-wrap { display: none; }
+      .layout { grid-template-columns: 260px minmax(0,1fr); }
+      .fields { grid-template-columns: 1fr; }
+      .sidebar { top: 68px; }
+      .btn-label { display: none; }
+    }
+    @media (max-width: 720px) {
+      .topbar { position: relative; grid-template-columns: 1fr; gap: 10px; padding: 13px 14px; }
+      .brand { align-items: start; }
+      .brand-copy { min-width: 0; }
+      .brand h1 { font-size: 17px; }
+      .toolbar { justify-self: stretch; }
+      .toolbar .btn-primary { margin-left: auto; }
+      .layout { display: block; }
+      .sidebar { position: relative; top: auto; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      .block-nav { display: flex; overflow-x: auto; }
+      .nav-item { min-width: 210px; border-bottom: 0; border-right: 1px solid var(--soft-line); }
+      .sidebar-tip { display: none; }
+      .workspace { padding: 17px 12px 52px; }
+      .workspace-head { align-items: start; }
+      .legend { display: none; }
+      .block { padding: 16px 14px 19px; }
+      .block-head { display: grid; }
+      .block-actions { justify-content: start; }
+      .previews { grid-template-columns: 1fr; }
+      .range-row { grid-template-columns: 1fr; }
+      .footer { position: relative; width: 100%; height: auto; min-height: 44px; align-items: start; flex-direction: column; overflow: hidden; padding-block: 9px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main id="app" class="app"></main>
+  <div id="modal" class="modal-shell" hidden aria-hidden="true"></div>
+  <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
+  <script>
+    "use strict";
+    const ICONS = {
+      undo: '<svg class="icon" viewBox="0 0 24 24"><path d="M9 7 4 12l5 5"/><path d="M5 12h9a6 6 0 0 1 6 6"/></svg>',
+      redo: '<svg class="icon" viewBox="0 0 24 24"><path d="m15 7 5 5-5 5"/><path d="M19 12h-9a6 6 0 0 0-6 6"/></svg>',
+      search: '<svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>',
+      check: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.7 2.7L16.5 9"/></svg>',
+      split: '<svg class="icon" viewBox="0 0 24 24"><path d="M8 4v5l-4 3 4 3v5M16 4v5l4 3-4 3v5"/></svg>',
+      merge: '<svg class="icon" viewBox="0 0 24 24"><path d="M5 7h5l4 5h5M5 17h5l4-5"/><path d="m16 9 3 3-3 3"/></svg>',
+      import: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>',
+      folder: '<svg class="icon" viewBox="0 0 24 24"><path d="M3 6.5h6l2 2h10v9.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+      reload: '<svg class="icon" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>',
+      close: '<svg class="icon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>'
+    };
+    const state = {
+      data: null, blocks: [], active: 0, search: "", note: "", dirty: false, baseline: null,
+      undo: [], redo: [], modal: null, saving: false, loading: false,
+      projectDirectoryHandle: null, s02DirectoryHandle: null, directoryPermission: "unknown", currentSourceName: "semantic-blocks.json"
+    };
+    const TOOL_VERSION = "1.1.0";
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+    const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[ch]));
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const invalidText = (value) => !String(value ?? "").trim() || /^(待填写|请说明)/.test(String(value).trim());
+
+    function requireValue(condition, message) {
+      if (!condition) throw new Error(message);
+    }
+    async function sha256File(file) {
+      requireValue(window.crypto?.subtle, "当前浏览器无法计算来源哈希，请使用最新版 Chrome 或 Edge。");
+      const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+      return [...new Uint8Array(digest)].map(value => value.toString(16).padStart(2, "0")).join("").toUpperCase();
+    }
+    async function readJsonFile(directory, name) {
+      const handle = await directory.getFileHandle(name, {create:false});
+      const file = await handle.getFile();
+      let value;
+      try { value = JSON.parse(await file.text()); }
+      catch { throw new Error(`${name} 不是有效的 UTF-8 JSON。`); }
+      requireValue(value && typeof value === "object" && !Array.isArray(value), `${name} 顶层必须是对象。`);
+      return {name, file, value, sha256:await sha256File(file)};
+    }
+    function validateTimeline(timeline) {
+      requireValue(timeline.schema_version === "2.0" && Array.isArray(timeline.units) && timeline.units.length, "S01/text-unit-timeline.json 必须是非空的 schema 2.0 产物。");
+      let previousStart = -Infinity;
+      timeline.units.forEach((unit, index) => {
+        const expectedId = `unit-${String(index + 1).padStart(6, "0")}`;
+        requireValue(unit?.unit_id === expectedId, `S01 文字单元 ID 不连续：应为 ${expectedId}。`);
+        requireValue(typeof unit.text === "string" && unit.text, `${expectedId} 缺少文字。`);
+        requireValue(Number.isFinite(Number(unit.start)) && Number.isFinite(Number(unit.end)) && Number(unit.end) > Number(unit.start) && Number(unit.start) >= previousStart, `${expectedId} 时间非法。`);
+        previousStart = Number(unit.start);
+      });
+      return timeline.units;
+    }
+    function punctuationFromTranscript(transcript, units) {
+      requireValue(transcript.schema_version === "1.0" && Array.isArray(transcript.sentences) && transcript.sentences.length, "S02/semantic-transcript.json 必须是非空的 schema 1.0 产物。");
+      const result = {};
+      transcript.sentences.forEach((sentence, sentenceIndex) => {
+        requireValue(Array.isArray(sentence?.inserted_punctuation) && sentence.inserted_punctuation.length, `semantic-transcript.json 的第 ${sentenceIndex + 1} 个句子缺少标点记录。`);
+        sentence.inserted_punctuation.forEach(item => {
+          const index = Number(String(item?.after_unit_id || "").split("-").pop()) - 1;
+          requireValue(Number.isInteger(index) && index >= 0 && index < units.length && typeof item.punctuation === "string", "semantic-transcript.json 包含非法标点记录。");
+          requireValue(result[String(index)] === undefined, `semantic-transcript.json 重复使用 ${item.after_unit_id} 标点边界。`);
+          result[String(index)] = item.punctuation;
+        });
+      });
+      return result;
+    }
+    function semanticTextFrom(units, punctuation, start, end) {
+      let text = "";
+      for (let index = start; index <= end; index += 1) text += units[index].text + (punctuation[String(index)] || "");
+      return text;
+    }
+    function editableDraftBlocks(draft, units, punctuation) {
+      requireValue(draft.schema_version === "1.0" && draft.validation?.status === "PASSED" && draft.validation?.issue_count === 0, "S02/semantic-blocks.json 尚未通过正式验证。");
+      requireValue(Array.isArray(draft.blocks) && draft.blocks.length, "S02/semantic-blocks.json 缺少 blocks。");
+      let expectedStart = 0;
+      const result = draft.blocks.map((block, index) => {
+        const range = block?.source_unit_range;
+        const start = Number(String(range?.start_unit_id || "").split("-").pop()) - 1;
+        const end = Number(String(range?.end_unit_id || "").split("-").pop()) - 1;
+        requireValue(start === expectedStart && Number.isInteger(end) && end >= start && end < units.length && range.unit_count === end - start + 1, `semantic-blocks.json 的第 ${index + 1} 个块没有连续覆盖文字单元。`);
+        requireValue(block.verbatim_text === units.slice(start, end + 1).map(unit => unit.text).join(""), `semantic-blocks.json 的第 ${index + 1} 个块忠实文字与 S01 不一致。`);
+        requireValue(block.semantic_text === semanticTextFrom(units, punctuation, start, end), `semantic-blocks.json 的第 ${index + 1} 个块语义文字与 semantic-transcript 不一致。`);
+        const editable = {end_unit_id:units[end].unit_id};
+        for (const key of ["title","semantic_role","cognitive_goal","boundary_reason"]) {
+          requireValue(typeof block[key] === "string" && block[key].trim(), `semantic-blocks.json 的第 ${index + 1} 个块缺少 ${key}。`);
+          editable[key] = block[key].trim();
+        }
+        expectedStart = end + 1;
+        return editable;
+      });
+      requireValue(expectedStart === units.length, "semantic-blocks.json 没有完整覆盖 S01 全文。");
+      requireValue(result.at(-1).boundary_reason === "END_OF_TRANSCRIPT", "semantic-blocks.json 最后一块必须以 END_OF_TRANSCRIPT 结束。");
+      return result;
+    }
+    async function projectData(projectDirectory) {
+      const s01Directory = await projectDirectory.getDirectoryHandle("S01", {create:false});
+      const s02Directory = await projectDirectory.getDirectoryHandle("S02", {create:false});
+      const timelineFile = await readJsonFile(s01Directory, "text-unit-timeline.json");
+      const transcriptFile = await readJsonFile(s02Directory, "semantic-transcript.json");
+      const draftFile = await readJsonFile(s02Directory, "semantic-blocks.json");
+      const units = validateTimeline(timelineFile.value);
+      requireValue(transcriptFile.value.source?.sha256 === timelineFile.sha256, "semantic-transcript.json 的 S01 来源哈希不匹配。");
+      const punctuation = punctuationFromTranscript(transcriptFile.value, units);
+      requireValue(draftFile.value.sources?.text_unit_timeline?.sha256 === timelineFile.sha256, "semantic-blocks.json 的 S01 来源哈希不匹配。");
+      requireValue(draftFile.value.sources?.semantic_transcript?.sha256 === transcriptFile.sha256, "semantic-blocks.json 的 semantic-transcript 来源哈希不匹配。");
+      const draftBlocks = editableDraftBlocks(draftFile.value, units, punctuation);
+      let outputExists = true;
+      try { await s02Directory.getFileHandle("semantic-blocks-approved.json", {create:false}); }
+      catch { outputExists = false; }
+      return {
+        s02Directory,
+        data:{
+          tool_version:TOOL_VERSION,
+          project_name:projectDirectory.name,
+          source_kind:"draft",
+          output_file:"S02/semantic-blocks-approved.json",
+          output_path:"S02/semantic-blocks-approved.json",
+          output_name:"semantic-blocks-approved.json",
+          output_exists:outputExists,
+          artifact_sources:{
+            text_unit_timeline:{file:"../S01/text-unit-timeline.json", schema_version:"2.0", sha256:timelineFile.sha256, unit_count:units.length},
+            semantic_transcript:{file:"semantic-transcript.json", schema_version:"1.0", sha256:transcriptFile.sha256},
+            semantic_blocks_draft:{file:"semantic-blocks.json", schema_version:"1.0", sha256:draftFile.sha256}
+          },
+          draft_sha256:draftFile.sha256,
+          units:units.map(unit => ({unit_id:unit.unit_id, text:unit.text, start:unit.start, end:unit.end})),
+          punctuation,
+          blocks:draftBlocks.map(block => ({...block})),
+          draft_blocks:draftBlocks.map(block => ({...block}))
+        }
+      };
+    }
+    function landingHtml(message = "") {
+      return `<div class="loading"><section class="project-picker">
+        <h1>S02 语义分块审批</h1>
+        <p>这是通用审批工具，不包含任何项目数据。请选择包含 <code>S01</code> 和 <code>S02</code> 的项目根目录；工具会读取最新正式产物并把审批结果写入 <code>S02/semantic-blocks-approved.json</code>。</p>
+        <button id="open-project" class="btn btn-primary">${ICONS.folder}<span>选择项目根目录</span></button>
+        ${message ? `<div class="project-error">${escapeHtml(message)}</div>` : ""}
+      </section></div>`;
+    }
+    function renderLanding(message = "") {
+      state.data = null; state.blocks = []; state.projectDirectoryHandle = null; state.s02DirectoryHandle = null; state.directoryPermission = "unknown";
+      $("#app").innerHTML = landingHtml(message);
+      $("#open-project").addEventListener("click", openProject);
+    }
+    async function loadProject(projectDirectory, successMessage = "") {
+      state.loading = true;
+      $("#app").innerHTML = `<div class="loading">正在验证并读取最新 S02 数据…</div>`;
+      try {
+        const loaded = await projectData(projectDirectory);
+        state.projectDirectoryHandle = projectDirectory;
+        state.s02DirectoryHandle = loaded.s02Directory;
+        state.directoryPermission = await projectDirectory.queryPermission({mode:"readwrite"});
+        state.data = loaded.data;
+        state.blocks = loaded.data.draft_blocks.map(block => ({...block}));
+        state.active = 0; state.search = ""; state.note = ""; state.undo = []; state.redo = []; state.currentSourceName = "semantic-blocks.json";
+        state.baseline = contentSnapshot(); state.dirty = false;
+        render();
+        if (successMessage) showToast(successMessage, "success");
+      } catch (error) {
+        renderLanding(error.message || String(error));
+      } finally { state.loading = false; }
+    }
+    async function openProject() {
+      if (typeof window.showDirectoryPicker !== "function") return renderLanding("当前浏览器不支持目录选择，请使用最新版 Chrome 或 Edge 直接打开本 HTML。");
+      try {
+        const handle = await window.showDirectoryPicker({id:"s02-block-review-project", mode:"readwrite"});
+        await loadProject(handle, `已读取 ${handle.name} 的最新机器草稿。`);
+      } catch (error) {
+        if (error?.name !== "AbortError") renderLanding(error.message || String(error));
+      }
+    }
+
+    function unitIndex(unitId) {
+      const value = Number(String(unitId).split("-").pop()) - 1;
+      if (!Number.isInteger(value) || value < 0 || value >= state.data.units.length) throw new Error(`非法文字单元：${unitId}`);
+      return value;
+    }
+    function startIndex(index) { return index === 0 ? 0 : unitIndex(state.blocks[index - 1].end_unit_id) + 1; }
+    function punctuationAt(index) { return state.data.punctuation[String(index)] || ""; }
+    function semanticText(start, end) {
+      let text = "";
+      for (let i = start; i <= end; i += 1) text += state.data.units[i].text + punctuationAt(i);
+      return text;
+    }
+    function verbatimText(start, end) { return state.data.units.slice(start, end + 1).map(unit => unit.text).join(""); }
+    function derive(index) {
+      const start = startIndex(index), end = unitIndex(state.blocks[index].end_unit_id);
+      const first = state.data.units[start], last = state.data.units[end];
+      return { start, end, startId: first.unit_id, endId: last.unit_id, count: end - start + 1, startTime: Number(first.start), endTime: Number(last.end), semantic: semanticText(start, end), verbatim: verbatimText(start, end) };
+    }
+    function formatTime(seconds) {
+      const value = Math.max(0, Number(seconds));
+      const minutes = Math.floor(value / 60), remainder = Math.floor(value % 60);
+      return `${String(minutes).padStart(2,"0")}:${String(remainder).padStart(2,"0")}`;
+    }
+    function accent(index) { return ["#039c92", "#bf7800", "#6f63c7", "#1475c9"][index % 4]; }
+    function snapshot() { return JSON.stringify({blocks: state.blocks, note: state.note, active: state.active, currentSourceName:state.currentSourceName}); }
+    function contentSnapshot() { return JSON.stringify({blocks: state.blocks, note: state.note}); }
+    function updateDirty() { state.dirty = state.baseline !== null && contentSnapshot() !== state.baseline; }
+    function restore(serialized) {
+      const value = JSON.parse(serialized); state.blocks = value.blocks; state.note = value.note; state.active = clamp(value.active, 0, state.blocks.length - 1); state.currentSourceName = value.currentSourceName || "semantic-blocks.json"; updateDirty(); render();
+    }
+    function beforeMutation() { state.undo.push(snapshot()); if (state.undo.length > 80) state.undo.shift(); state.redo = []; }
+    function undo() { if (!state.undo.length) return; state.redo.push(snapshot()); restore(state.undo.pop()); }
+    function redo() { if (!state.redo.length) return; state.undo.push(snapshot()); restore(state.redo.pop()); }
+    function blockValid(block, index) {
+      return !invalidText(block.title) && !invalidText(block.semantic_role) && !invalidText(block.cognitive_goal) && !invalidText(block.boundary_reason) && (index !== state.blocks.length - 1 || block.boundary_reason.trim() === "END_OF_TRANSCRIPT");
+    }
+    function allBlocksValid() { return state.blocks.length > 0 && state.blocks.every(blockValid); }
+    function roundTime(value) { return Math.round(Number(value) * 1000000) / 1000000; }
+    function decisionSignature(block) {
+      return ["title","semantic_role","cognitive_goal","boundary_reason","end_unit_id"].map(key => String(block[key] ?? "").trim()).join("\u001f");
+    }
+    function changeCount() {
+      const draft = state.data.draft_blocks || [], current = state.blocks;
+      const length = Math.max(draft.length, current.length); let count = 0;
+      for (let index = 0; index < length; index += 1) {
+        if (!draft[index] || !current[index] || decisionSignature(draft[index]) !== decisionSignature(current[index])) count += 1;
+      }
+      return count;
+    }
+    function buildApprovedArtifact() {
+      if (!allBlocksValid()) throw new Error("请补全所有语义块字段；最后一块的结束理由必须是 END_OF_TRANSCRIPT。");
+      const blocks = state.blocks.map((block, index) => {
+        const info = derive(index);
+        return {
+          block_id: `block-${String(index + 1).padStart(3,"0")}`,
+          title: block.title.trim(), semantic_role: block.semantic_role.trim(), cognitive_goal: block.cognitive_goal.trim(), boundary_reason: block.boundary_reason.trim(),
+          start: roundTime(info.startTime), end: roundTime(info.endTime),
+          source_unit_range: {start_unit_id:info.startId, end_unit_id:info.endId, unit_count:info.count},
+          verbatim_text: info.verbatim, semantic_text: info.semantic
+        };
+      });
+      return {
+        schema_version:"1.0", stage:"S02", timebase:"INPUT_VIDEO_ABSOLUTE_SECONDS",
+        sources:state.data.artifact_sources,
+        approval:{status:"APPROVED", approved_at:new Date().toISOString(), tool:"semantic-blocks-review.html", tool_version:state.data.tool_version, reviewed_block_count:blocks.length, change_count:changeCount(), reviewer_note:state.note.trim()},
+        blocks,
+        validation:{status:"PASSED", issue_count:0, source_units_covered:state.data.units.length, source_units_total:state.data.units.length}
+      };
+    }
+
+    function shellHtml() {
+      return `<header class="topbar">
+        <div class="brand"><span class="brand-mark"></span><div class="brand-copy"><h1>S02 语义分块审批</h1><div class="project">${escapeHtml(state.data.project_name)}</div></div></div>
+        <div class="progress-wrap"><div id="progress-label" class="progress-label"></div><div class="progress-track"><div id="progress-bar" class="progress-bar"></div></div></div>
+        <div class="toolbar">
+          <button id="switch-project" class="btn" title="打开另一个项目">${ICONS.folder}<span class="btn-label">打开项目</span></button>
+          <button id="undo" class="btn" title="撤销 (Ctrl+Z)">${ICONS.undo}<span class="btn-label">撤销</span></button>
+          <button id="redo" class="btn" title="重做 (Ctrl+Y)">${ICONS.redo}<span class="btn-label">重做</span></button>
+          <button id="reload-draft" class="btn" title="恢复 semantic-blocks.json">${ICONS.reload}<span class="btn-label">重新加载草稿</span></button>
+          <button id="import-json" class="btn" title="导入分块 JSON">${ICONS.import}<span class="btn-label">Import JSON</span></button>
+          <button id="save" class="btn btn-primary">${ICONS.check}<span>存档</span></button>
+          <input id="import-file" type="file" accept=".json,application/json" hidden>
+        </div>
+      </header>
+      <div class="layout">
+        <aside class="sidebar">
+          <div class="search"><div class="search-box">${ICONS.search}<input id="search" type="search" placeholder="搜索标题或内容" value="${escapeHtml(state.search)}" aria-label="搜索语义块"></div></div>
+          <nav id="block-nav" class="block-nav" aria-label="语义块导航"></nav>
+          <div class="sidebar-tip">当前编辑源：${escapeHtml(state.currentSourceName)}。点击“存档”生成 semantic-blocks-approved.json。</div>
+        </aside>
+        <section class="workspace">
+          <div class="workspace-head"><div><h2>semantic-blocks.json → semantic-blocks-approved.json</h2><p>修改字段或分界后即可存档，不需要逐块确认。</p></div></div>
+          <div id="document" class="document"></div>
+          <section class="approval-panel"><h3>审批备注</h3><p>可选。记录本次调整原因，随最终 JSON 一起保存。</p><div class="note-field"><textarea id="reviewer-note" placeholder="例如：合并重复铺垫块，并把方案转折点后移到 unit-000123。">${escapeHtml(state.note)}</textarea></div></section>
+        </section>
+      </div>
+      <footer class="footer"><div class="output-path">最终输入文件：<strong>${escapeHtml(state.data.output_path || state.data.output_file)}</strong></div><div id="save-state" class="save-state"></div></footer>`;
+    }
+    function renderNav() {
+      const query = state.search.trim().toLowerCase();
+      $("#block-nav").innerHTML = state.blocks.map((block, index) => {
+        const info = derive(index); const haystack = `${block.title} ${block.semantic_role} ${block.cognitive_goal} ${info.semantic}`.toLowerCase();
+        if (query && !haystack.includes(query)) return "";
+        return `<button class="nav-item ${index === state.active ? "active" : ""}" data-nav="${index}">
+          <span class="nav-num">${String(index + 1).padStart(2,"0")}</span><span class="nav-title">${escapeHtml(block.title || "未命名语义块")}</span>
+          <span class="nav-meta"><span>${formatTime(info.endTime - info.startTime)}</span><span>${info.count} units</span></span>
+        </button>`;
+      }).join("");
+      $$('[data-nav]').forEach(button => button.addEventListener("click", () => focusBlock(Number(button.dataset.nav))));
+    }
+    function fieldHtml(index, key, label, multiline = false) {
+      const value = state.blocks[index][key]; const invalid = invalidText(value) || (key === "boundary_reason" && index === state.blocks.length - 1 && value.trim() !== "END_OF_TRANSCRIPT");
+      const attrs = `data-field="${key}" data-index="${index}" class="${invalid ? "invalid" : ""}"`;
+      return `<div class="field"><label for="${key}-${index}">${label}</label>${multiline ? `<textarea id="${key}-${index}" ${attrs}>${escapeHtml(value)}</textarea>` : `<input id="${key}-${index}" ${attrs} value="${escapeHtml(value)}">`}</div>`;
+    }
+    function blockHtml(block, index) {
+      const info = derive(index), code = `B${String(index + 1).padStart(2,"0")}`;
+      return `<article id="block-${index}" class="block" style="--accent:${accent(index)}">
+        <div class="block-head"><div class="block-idline"><span class="block-code">${code}</span><span class="block-title-view">${escapeHtml(block.title || "未命名语义块")}</span><span class="block-time">${formatTime(info.startTime)}–${formatTime(info.endTime)} · ${info.startId}–${info.endId} · ${info.count} units</span></div>
+          <div class="block-actions"><button class="btn" data-action="split" data-index="${index}">${ICONS.split}拆分</button><button class="btn" data-action="merge" data-index="${index}" ${index === state.blocks.length - 1 ? "disabled" : ""}>${ICONS.merge}合并下一块</button></div></div>
+        <div class="fields">${fieldHtml(index,"semantic_role","语义角色")}${fieldHtml(index,"cognitive_goal","认知目标",true)}${fieldHtml(index,"boundary_reason","结束理由",true)}</div>
+        <div class="field" style="margin-top:12px">${fieldHtml(index,"title","区块标题").replace('<div class="field">','').replace('</div>','')}</div>
+        <p class="transcript">${escapeHtml(info.semantic)}</p>
+        <details class="verbatim-details"><summary>查看未加标点的忠实文字</summary><p>${escapeHtml(info.verbatim)}</p></details>
+      </article>`;
+    }
+    function renderDocument() {
+      let html = "";
+      state.blocks.forEach((block, index) => {
+        html += blockHtml(block, index);
+        if (index < state.blocks.length - 1) html += `<div class="boundary"><button class="btn boundary-btn" data-action="boundary" data-index="${index}">调整 B${String(index+1).padStart(2,"0")} / B${String(index+2).padStart(2,"0")} 边界</button></div>`;
+      });
+      $("#document").innerHTML = html;
+      $$('[data-action]').forEach(button => button.addEventListener("click", handleAction));
+      $$('[data-field]').forEach(input => input.addEventListener("input", handleFieldInput));
+    }
+    function updateChrome() {
+      const total = state.blocks.length;
+      $("#progress-label").textContent = `${state.currentSourceName} · ${total} blocks`;
+      $("#progress-bar").style.width = state.dirty ? "100%" : "0%";
+      $("#undo").disabled = !state.undo.length; $("#redo").disabled = !state.redo.length;
+      $("#save").disabled = state.saving;
+      const permission = state.directoryPermission === "granted" ? "项目目录已授权" : "存档前需授权项目目录";
+      $("#save-state").textContent = state.saving ? "正在写入存档…" : `${state.dirty ? "有修改" : "当前布局未修改"} · ${permission}`;
+    }
+    function render() {
+      $("#app").innerHTML = shellHtml(); renderNav(); renderDocument(); updateChrome(); bindShell();
+    }
+    function bindShell() {
+      $("#switch-project").addEventListener("click", openProject); $("#undo").addEventListener("click", undo); $("#redo").addEventListener("click", redo); $("#reload-draft").addEventListener("click", reloadDraft); $("#save").addEventListener("click", save);
+      $("#import-json").addEventListener("click", () => $("#import-file").click());
+      $("#import-file").addEventListener("change", event => { const file = event.target.files?.[0]; event.target.value = ""; if (file) importJson(file); });
+      $("#search").addEventListener("input", event => { state.search = event.target.value; renderNav(); });
+      $("#reviewer-note").addEventListener("input", event => { if (!event.target.dataset.started) { beforeMutation(); event.target.dataset.started = "1"; } state.note = event.target.value; updateDirty(); updateChrome(); });
+    }
+    function focusBlock(index) {
+      state.active = index; renderNav(); $("#block-" + index)?.scrollIntoView({behavior:"smooth", block:"start"});
+    }
+    function handleFieldInput(event) {
+      const index = Number(event.target.dataset.index), key = event.target.dataset.field;
+      if (!event.target.dataset.started) { beforeMutation(); event.target.dataset.started = "1"; }
+      state.blocks[index][key] = event.target.value; updateDirty();
+      event.target.classList.toggle("invalid", invalidText(event.target.value) || (key === "boundary_reason" && index === state.blocks.length - 1 && event.target.value.trim() !== "END_OF_TRANSCRIPT"));
+      $("#block-" + index + " .block-title-view").textContent = state.blocks[index].title || "未命名语义块";
+      renderNav(); updateChrome();
+    }
+    function handleAction(event) {
+      const index = Number(event.currentTarget.dataset.index), action = event.currentTarget.dataset.action;
+      if (action === "merge") return mergeNext(index);
+      if (action === "boundary") return openBoundary(index, "adjust");
+      if (action === "split") return openBoundary(index, "split");
+    }
+    async function reloadDraft() {
+      if (!state.projectDirectoryHandle) return renderLanding("请先选择项目根目录。");
+      await loadProject(state.projectDirectoryHandle, "已从磁盘重新读取最新 semantic-blocks.json。");
+    }
+    function importedBlocks(documentValue) {
+      if (!documentValue || !Array.isArray(documentValue.blocks) || !documentValue.blocks.length) throw new Error("导入 JSON 缺少 blocks。");
+      const sourceHash = documentValue.sources?.text_unit_timeline?.sha256;
+      const currentHash = state.data.artifact_sources?.text_unit_timeline?.sha256;
+      if (sourceHash && currentHash && sourceHash !== currentHash) throw new Error("导入 JSON 不属于当前项目：S01 文字单元来源哈希不匹配。");
+      let previousEnd = -1;
+      const blocks = documentValue.blocks.map((block, index) => {
+        if (!block || typeof block !== "object") throw new Error(`导入 JSON 的第 ${index + 1} 个 block 不是对象。`);
+        const endUnitId = block.end_unit_id || block.source_unit_range?.end_unit_id;
+        const end = unitIndex(endUnitId);
+        if (end <= previousEnd) throw new Error("导入 JSON 的 block 边界必须严格递增。");
+        previousEnd = end;
+        const imported = {end_unit_id:endUnitId};
+        for (const key of ["title","semantic_role","cognitive_goal","boundary_reason"]) {
+          if (typeof block[key] !== "string" || !block[key].trim()) throw new Error(`导入 JSON 的第 ${index + 1} 个 block 缺少 ${key}。`);
+          imported[key] = block[key].trim();
+        }
+        return imported;
+      });
+      if (previousEnd !== state.data.units.length - 1) throw new Error("导入 JSON 的 blocks 没有完整覆盖当前项目全文。");
+      if (blocks.at(-1).boundary_reason !== "END_OF_TRANSCRIPT") throw new Error("导入 JSON 最后一个 block 的 boundary_reason 必须是 END_OF_TRANSCRIPT。");
+      return blocks;
+    }
+    async function importJson(file) {
+      try {
+        const documentValue = JSON.parse(await file.text());
+        const blocks = importedBlocks(documentValue);
+        beforeMutation(); state.blocks = blocks; state.note = typeof documentValue.approval?.reviewer_note === "string" ? documentValue.approval.reviewer_note : ""; state.active = 0; state.currentSourceName = file.name; updateDirty(); render();
+        showToast(`已导入 ${file.name}：${blocks.length} blocks。`, "success");
+      } catch (error) { showToast(error.message || String(error), "error"); }
+    }
+    async function authorizedDirectory() {
+      if (!state.projectDirectoryHandle || !state.s02DirectoryHandle) throw new Error("请先打开待审批项目。");
+      let permission = await state.projectDirectoryHandle.queryPermission({mode:"readwrite"});
+      if (permission !== "granted") permission = await state.projectDirectoryHandle.requestPermission({mode:"readwrite"});
+      if (permission !== "granted") throw new Error("需要项目目录写权限才能生成 semantic-blocks-approved.json。");
+      state.directoryPermission = "granted"; updateChrome(); return state.s02DirectoryHandle;
+    }
+    function mergeNext(index) {
+      if (index >= state.blocks.length - 1) return;
+      const next = state.blocks[index + 1];
+      if (!confirm(`合并 B${String(index+1).padStart(2,"0")} 与 B${String(index+2).padStart(2,"0")}？合并后保留前一块的标题、语义角色和认知目标。`)) return;
+      beforeMutation(); state.blocks[index].end_unit_id = next.end_unit_id; state.blocks[index].boundary_reason = next.boundary_reason; state.blocks.splice(index + 1, 1); state.active = index; updateDirty(); render();
+    }
+    function openBoundary(index, mode) {
+      const current = derive(index);
+      let min = current.start, max = current.end - 1, value = Math.floor((min + max) / 2);
+      if (mode === "adjust") { const next = derive(index + 1); max = next.end - 1; value = current.end; }
+      if (max < min) { showToast("该语义块只有一个文字单元，无法继续拆分。", "error"); return; }
+      state.modal = {index, mode, min, max, value}; renderModal();
+    }
+    function previewText(start, end, side) {
+      const raw = semanticText(start, end), limit = 150;
+      if (raw.length <= limit) return raw;
+      return side === "left" ? "…" + raw.slice(-limit) : raw.slice(0, limit) + "…";
+    }
+    let boundaryPreviewFrame = 0;
+    function boundaryPreview() {
+      const {index, mode, value} = state.modal;
+      const leftStart = startIndex(index), rightEnd = mode === "adjust" ? derive(index + 1).end : derive(index).end;
+      return {
+        leftText: previewText(leftStart, value, "left"),
+        rightText: previewText(value + 1, rightEnd, "right"),
+        leftRange: `${state.data.units[leftStart].unit_id} – ${state.data.units[value].unit_id}`,
+        rightRange: `${state.data.units[value+1].unit_id} – ${state.data.units[rightEnd].unit_id}`,
+        currentUnit: state.data.units[value].unit_id
+      };
+    }
+    function updateBoundaryPreview() {
+      boundaryPreviewFrame = 0;
+      if (!state.modal) return;
+      const preview = boundaryPreview();
+      $("#boundary-unit").value = String(state.modal.value);
+      $("#boundary-current").textContent = `当前分界：${preview.currentUnit} 之后`;
+      $("#boundary-left-text").textContent = preview.leftText;
+      $("#boundary-right-text").textContent = preview.rightText;
+      $("#boundary-left-range").textContent = preview.leftRange;
+      $("#boundary-right-range").textContent = preview.rightRange;
+    }
+    function scheduleBoundaryPreview() {
+      if (!boundaryPreviewFrame) boundaryPreviewFrame = requestAnimationFrame(updateBoundaryPreview);
+    }
+    function renderModal() {
+      const modal = $("#modal"), config = state.modal; if (!config) { modal.hidden = true; return; }
+      const {index, mode, min, max, value} = config;
+      const preview = boundaryPreview();
+      modal.innerHTML = `<section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-head"><div><h3 id="modal-title">${mode === "adjust" ? `调整 B${String(index+1).padStart(2,"0")} / B${String(index+2).padStart(2,"0")} 边界` : `拆分 B${String(index+1).padStart(2,"0")}`}</h3><p>边界只能落在 S01 文字单元之间，派生字段将在保存时重新生成。</p></div><button class="btn close-btn" id="modal-close" aria-label="关闭">${ICONS.close}</button></div>
+        <div class="modal-body"><div class="range-meta"><span>${state.data.units[min].unit_id}</span><span>${state.data.units[max].unit_id}</span></div>
+          <div class="range-row"><input id="boundary-range" type="range" min="${min}" max="${max}" step="1" value="${value}" aria-label="边界文字单元"><select id="boundary-unit" class="unit-select" aria-label="当前边界文字单元">${Array.from({length:max-min+1},(_,offset)=>{const i=min+offset;return `<option value="${i}" ${i===value?"selected":""}>${state.data.units[i].unit_id}</option>`}).join("")}</select></div>
+          <p class="range-current" id="boundary-current">当前分界：${preview.currentUnit} 之后</p>
+          <div class="previews"><div class="preview"><strong>边界前（左块结束）</strong><p id="boundary-left-text">${escapeHtml(preview.leftText)}</p><small id="boundary-left-range">${preview.leftRange}</small></div><div class="preview"><strong>边界后（右块开始）</strong><p id="boundary-right-text">${escapeHtml(preview.rightText)}</p><small id="boundary-right-range">${preview.rightRange}</small></div></div>
+        </div><div class="modal-actions"><button class="btn" id="modal-cancel">取消</button><button class="btn btn-primary" id="modal-apply">${mode === "adjust" ? "应用边界" : "拆分语义块"}</button></div>
+      </section>`;
+      modal.hidden = false; modal.setAttribute("aria-hidden","false");
+      $("#modal-close").onclick = closeModal; $("#modal-cancel").onclick = closeModal; $("#modal-apply").onclick = applyModal;
+      $("#boundary-range").oninput = event => { state.modal.value = Number(event.target.value); scheduleBoundaryPreview(); };
+      $("#boundary-unit").onchange = event => { state.modal.value = Number(event.target.value); $("#boundary-range").value = event.target.value; updateBoundaryPreview(); };
+      modal.onclick = event => { if (event.target === modal) closeModal(); };
+    }
+    function closeModal() { if (boundaryPreviewFrame) cancelAnimationFrame(boundaryPreviewFrame); boundaryPreviewFrame = 0; state.modal = null; const modal = $("#modal"); modal.hidden = true; modal.setAttribute("aria-hidden","true"); }
+    function applyModal() {
+      const {index, mode, value} = state.modal; beforeMutation();
+      if (mode === "adjust") {
+        state.blocks[index].end_unit_id = state.data.units[value].unit_id;
+      } else {
+        const originalEnd = state.blocks[index].end_unit_id, originalReason = state.blocks[index].boundary_reason;
+        state.blocks[index].end_unit_id = state.data.units[value].unit_id; state.blocks[index].boundary_reason = "请说明此处认知任务变化";
+        state.blocks.splice(index + 1, 0, {title:"新语义块", semantic_role:"待填写", cognitive_goal:"待填写", boundary_reason:originalReason, end_unit_id:originalEnd});
+      }
+      state.active = index; updateDirty(); closeModal(); render(); requestAnimationFrame(() => $("#block-" + index)?.scrollIntoView({block:"start"}));
+    }
+    async function save() {
+      if (!allBlocksValid()) { showToast("请补全所有语义块字段；最后一块的结束理由必须是 END_OF_TRANSCRIPT。", "error"); return; }
+      if (state.data.output_name !== "semantic-blocks-approved.json") { showToast("存档文件名配置非法，已阻止写入。", "error"); return; }
+      if (state.data.output_exists && !confirm("S02/semantic-blocks-approved.json 已存在。确认用当前审批结果覆盖它吗？")) return;
+      state.saving = true; updateChrome();
+      try {
+        const artifact = buildApprovedArtifact();
+        const jsonText = JSON.stringify(artifact, null, 2) + "\n";
+        const directory = await authorizedDirectory();
+        const fileHandle = await directory.getFileHandle("semantic-blocks-approved.json", {create:true});
+        const writable = await fileHandle.createWritable();
+        await writable.write(jsonText); await writable.close();
+        state.data.output_exists = true; state.baseline = contentSnapshot(); state.dirty = false;
+        showToast("已直接写入 S02/semantic-blocks-approved.json；semantic-blocks.json 未被修改。", "success");
+      } catch (error) { if (error?.name !== "AbortError") showToast(error.message || String(error), "error"); }
+      finally { state.saving = false; updateChrome(); }
+    }
+    let toastTimer;
+    function showToast(message, type = "") { const toast = $("#toast"); toast.textContent = message; toast.className = `toast ${type}`; toast.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { toast.hidden = true; }, 5200); }
+    function init() { renderLanding(); }
+    window.addEventListener("beforeunload", event => { if (state.dirty) { event.preventDefault(); event.returnValue = ""; } });
+    window.addEventListener("keydown", event => {
+      if (event.key === "Escape" && state.modal) closeModal();
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") { event.preventDefault(); event.shiftKey ? redo() : undo(); }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "y") { event.preventDefault(); redo(); }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") { event.preventDefault(); save(); }
+    });
+    init();
+  </script>
+</body>
+</html>

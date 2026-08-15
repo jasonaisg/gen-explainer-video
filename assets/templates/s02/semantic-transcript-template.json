@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0",
+  "stage": "S02",
+  "timebase": "INPUT_VIDEO_ABSOLUTE_SECONDS",
+  "source": {
+    "file": "../S01/text-unit-timeline.json",
+    "schema_version": "2.0",
+    "sha256": "",
+    "unit_count": 1
+  },
+  "full_verbatim_text": "示例",
+  "full_semantic_text": "示例。",
+  "paragraphs": [
+    {
+      "paragraph_id": "paragraph-001",
+      "start_sentence_id": "sentence-0001",
+      "end_sentence_id": "sentence-0001",
+      "sentence_count": 1,
+      "semantic_text": "示例。"
+    }
+  ],
+  "sentences": [
+    {
+      "sentence_id": "sentence-0001",
+      "paragraph_id": "paragraph-001",
+      "verbatim_text": "示例",
+      "semantic_text": "示例。",
+      "start": 0.0,
+      "end": 1.0,
+      "source_unit_range": {
+        "start_unit_id": "unit-000001",
+        "end_unit_id": "unit-000001",
+        "unit_count": 1
+      },
+      "inserted_punctuation": [
+        {
+          "after_unit_id": "unit-000001",
+          "punctuation": "。"
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "PENDING",
+    "issue_count": null,
+    "source_units_covered": 1,
+    "source_units_total": 1
+  }
+}

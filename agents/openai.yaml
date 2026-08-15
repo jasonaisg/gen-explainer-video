@@ -1,0 +1,4 @@
+interface:
+  display_name: "科普讲解视频生成器"
+  short_description: "从口播视频生成可追溯文字单元时间轴、语义转录与语义块"
+  default_prompt: "使用 $gen-explainer-video，从我的口播视频生成可追溯的文字单元时间轴、语义转录与语义块。"

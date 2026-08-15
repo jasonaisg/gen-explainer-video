@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "stage": "S02",
+  "timebase": "INPUT_VIDEO_ABSOLUTE_SECONDS",
+  "sources": {
+    "text_unit_timeline": {
+      "file": "../S01/text-unit-timeline.json",
+      "schema_version": "2.0",
+      "sha256": "",
+      "unit_count": 1
+    },
+    "semantic_transcript": {
+      "file": "semantic-transcript.json",
+      "schema_version": "1.0",
+      "sha256": ""
+    },
+    "semantic_blocks_draft": {
+      "file": "semantic-blocks.json",
+      "schema_version": "1.0",
+      "sha256": ""
+    }
+  },
+  "approval": {
+    "status": "APPROVED",
+    "approved_at": "",
+    "tool": "s02_block_review.py",
+    "tool_version": "1.0.0",
+    "reviewed_block_count": 1,
+    "change_count": 0,
+    "reviewer_note": ""
+  },
+  "blocks": [
+    {
+      "block_id": "block-001",
+      "title": "示例语义块",
+      "semantic_role": "示例",
+      "cognitive_goal": "观众理解示例内容",
+      "boundary_reason": "END_OF_TRANSCRIPT",
+      "start": 0.0,
+      "end": 1.0,
+      "source_unit_range": {
+        "start_unit_id": "unit-000001",
+        "end_unit_id": "unit-000001",
+        "unit_count": 1
+      },
+      "verbatim_text": "示例",
+      "semantic_text": "示例。"
+    }
+  ],
+  "validation": {
+    "status": "PASSED",
+    "issue_count": 0,
+    "source_units_covered": 1,
+    "source_units_total": 1
+  }
+}

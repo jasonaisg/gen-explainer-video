@@ -1,0 +1,31 @@
+{
+  "schema_version": "2.0",
+  "stage": "S01",
+  "timebase": "INPUT_VIDEO_ABSOLUTE_SECONDS",
+  "engine": {
+    "name": "whisper.cpp",
+    "version": "",
+    "model": ""
+  },
+  "unitization_policy": {
+    "han": "ONE_CHARACTER_PER_UNIT",
+    "numbers": "CONSECUTIVE_GROUP",
+    "percentages": "NUMBER_AND_SUFFIX_GROUP",
+    "english": "CONSECUTIVE_GROUP",
+    "structured_alphanumeric": "CONSECUTIVE_GROUP",
+    "inferred_punctuation": "EXCLUDED"
+  },
+  "units": [
+    {
+      "raw_unit_id": "raw-unit-000001",
+      "text": "20%",
+      "kind": "percentage",
+      "start": 2.06,
+      "end": 2.59,
+      "confidence": 0.99,
+      "source_token_ids": ["token-0001-0001", "token-0001-0002"],
+      "timing_method": "SOURCE_TOKEN_ENVELOPE"
+    }
+  ],
+  "original_engine_output": "asr-raw/engine-output.json"
+}

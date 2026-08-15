@@ -1,0 +1,27 @@
+{
+  "schema_version": "2.0",
+  "stage": "S01",
+  "timebase": "INPUT_VIDEO_ABSOLUTE_SECONDS",
+  "unitization_policy": {
+    "han": "ONE_CHARACTER_PER_UNIT",
+    "numbers": "CONSECUTIVE_GROUP",
+    "percentages": "NUMBER_AND_SUFFIX_GROUP",
+    "english": "CONSECUTIVE_GROUP",
+    "structured_alphanumeric": "CONSECUTIVE_GROUP",
+    "inferred_punctuation": "EXCLUDED"
+  },
+  "units": [
+    {
+      "unit_id": "unit-000001",
+      "mapping_id": "map-000001",
+      "text": "20%",
+      "kind": "percentage",
+      "start": 2.06,
+      "end": 2.59,
+      "source_unit_ids": ["raw-unit-000001"],
+      "source_asr_text": "20%",
+      "operation": "KEEP",
+      "timing_method": "SOURCE_UNIT_ENVELOPE"
+    }
+  ]
+}
