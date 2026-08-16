@@ -71,3 +71,5 @@ description: 从剪辑完成的中文口播视频和匹配参考文稿出发，�
 ## 按需参考资料
 
 需要选择或校验视觉表达类型、设计动效方案或维护视觉表达词典时，读取 [科普视频视觉表达 Taxonomy](references/visual-expression-taxonomy.md)。
+
+需要为 `1080×1920` 竖屏项目配置或校验安全区和字幕区时，按目标平台读取并复用对应模板：[微信视频号](assets/templates/platforms/wechat-channels-vertical-safe-area.json)、[抖音](assets/templates/platforms/douyin-vertical-safe-area.json)或[小红书](assets/templates/platforms/xiaohongshu-vertical-safe-area.json)，同时遵守 [生产与安全区规范](references/production-spec.md)。

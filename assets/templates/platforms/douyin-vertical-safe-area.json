@@ -1,0 +1,126 @@
+{
+  "template_id": "douyin-vertical-safe-area-1080x1920",
+  "template_version": "1.0.0",
+  "status": "approved-default",
+  "platform": {
+    "id": "douyin",
+    "name_zh": "抖音"
+  },
+  "canvas": {
+    "width": 1080,
+    "height": 1920,
+    "aspect_ratio": "9:16",
+    "orientation": "portrait",
+    "unit": "px",
+    "origin": "top-left"
+  },
+  "rectangle_semantics": {
+    "format": "x-y-width-height",
+    "right": "x + width",
+    "bottom": "y + height",
+    "note": "right 和 bottom 表示边界坐标，不表示可绘制像素索引"
+  },
+  "safe_area": {
+    "name_zh": "统一安全区",
+    "x": 100,
+    "y": 220,
+    "width": 800,
+    "height": 1300,
+    "right": 900,
+    "bottom": 1520,
+    "insets": {
+      "left": 100,
+      "right": 180,
+      "top": 220,
+      "bottom": 400
+    },
+    "required_for": [
+      "text",
+      "title",
+      "logo",
+      "presenter",
+      "face",
+      "product",
+      "critical-animation",
+      "call-to-action"
+    ]
+  },
+  "subtitle_area": {
+    "name_zh": "字幕专用区",
+    "role": "functional-region-within-safe-area",
+    "x": 100,
+    "y": 1220,
+    "width": 800,
+    "height": 300,
+    "right": 900,
+    "bottom": 1520,
+    "exclusive_when_active": true,
+    "avoid_behind_subtitles": [
+      "face",
+      "product-detail",
+      "other-text",
+      "critical-animation"
+    ]
+  },
+  "subtitle_style": {
+    "max_lines": 2,
+    "max_chinese_characters_per_line": 15,
+    "minimum_font_size_px": 52,
+    "stroke_width_px": 2,
+    "minimum_contrast_ratio": 4.5,
+    "horizontal_align": "center",
+    "vertical_align": "center",
+    "overflow_policy": "split-caption-or-retime-never-shrink-below-minimum-or-cross-boundary"
+  },
+  "derived_risk_areas": {
+    "top": {
+      "x": 0,
+      "y": 0,
+      "width": 1080,
+      "height": 220
+    },
+    "bottom": {
+      "x": 0,
+      "y": 1520,
+      "width": 1080,
+      "height": 400
+    },
+    "left": {
+      "x": 0,
+      "y": 0,
+      "width": 100,
+      "height": 1920
+    },
+    "right": {
+      "x": 900,
+      "y": 0,
+      "width": 180,
+      "height": 1920
+    }
+  },
+  "rules": [
+    "所有关键内容的完整包围盒必须位于 safe_area 内",
+    "字幕的完整包围盒必须同时位于 safe_area 和 subtitle_area 内",
+    "subtitle_area 是 safe_area 内部的功能区，不构成第二套安全边界",
+    "背景、纹理、光效和非关键装饰可以铺满整个 canvas",
+    "right 风险区用于避让右侧互动操作栏",
+    "bottom 风险区用于避让账号、标题文案、音频、进度和底部导航，不得承载关键内容",
+    "项目存在用户显式配置时，以项目配置为准并记录覆盖来源"
+  ],
+  "validation": {
+    "element_check": "full-bounding-box",
+    "safe_area_must_fit_canvas": true,
+    "subtitle_area_must_fit_safe_area": true
+  },
+  "provenance": {
+    "approved_date": "2026-08-16",
+    "approval": "user-approved skill default",
+    "official_pixel_standard": false,
+    "reference": {
+      "title": "2020年Q4巨量引擎矩阵产品广告资源刊例：抖音广告素材规格表",
+      "publisher": "巨量引擎",
+      "url": "https://lf3-ttcdn-tos.pstatp.com/obj/cognition-public/attachment_pdf_31204ca42bb9640459f1ace869f45701.pdf",
+      "note": "公开资料为开屏素材提供1080画幅遮挡参考；本模板进一步结合播放页右侧互动栏与底部叠加层，形成用户确认的保守生产标准，并非平台强制像素线"
+    }
+  }
+}

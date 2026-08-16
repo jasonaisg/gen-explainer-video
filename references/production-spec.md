@@ -25,6 +25,23 @@
 - 代表性审阅必须包含长标题、高密度信息、人物画中画、底部字幕和右侧平台控件等压力情况。
 - 设计稿通过后，仍需对真实渲染结果复查安全区。
 
+### 平台 1080×1920 默认匹配模板
+
+当画布为 `1080×1920` 且项目没有用户显式覆盖配置时，按目标平台读取对应 JSON：
+
+- 微信视频号：`assets/templates/platforms/wechat-channels-vertical-safe-area.json`
+- 抖音：`assets/templates/platforms/douyin-vertical-safe-area.json`
+- 小红书：`assets/templates/platforms/xiaohongshu-vertical-safe-area.json`
+
+三个模板遵守同一契约：
+
+- 所有关键内容共用目标平台 JSON 中的唯一 `safe_area`。
+- 字幕固定使用 `safe_area` 内部的 `subtitle_area`；它不是第二套安全边界。
+- 字幕最多两行，每行建议不超过 15 个汉字，字号不低于 52px。
+- 背景和非关键装饰可以铺满画布；各平台 JSON 的风险区不得承载关键内容。
+- 小红书与抖音模板是用户确认的保守生产标准，不表示平台发布了相同数值的强制像素线。
+- 项目配置覆盖模板时，记录覆盖值、来源和批准决定；生成器和验证器不得继续复制模板魔数。
+
 ## 批量生产
 
 - 先验证代表性视觉和动态样片，再批量实现。
